@@ -1,8 +1,43 @@
 import Head from 'next/head'
 import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import Link from 'next/link'
+
+import styles from '../styles/Home.module.scss'
+
+import { useRef, useState } from 'react'
 
 export default function Home() {
+  const inputRef = useRef()
+  const [items, setItems] = useState([])
+  const [itemsInfos, setItemsInfos] = useState([])
+
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    const { value } = inputRef.current
+    const response = await fetch(`/api/youtube?q=${value}`)
+    const {data} = await response.json()
+    setItemsInfos(data)
+    setItems(data.items)
+  }
+
+
+  const handleLoadMore = async (event) => {
+    event.preventDefault()
+    const response = await fetch(`/api/youtube`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json;charset=utf-8'
+      },
+      body: JSON.stringify(itemsInfos)
+    })
+    const { data } = await response.json()
+
+    for (let item in data.items) {
+      setItems(prev => [...prev, data.items[item]])
+    }
+  }
+  
+
   return (
     <div className={styles.container}>
       <Head>
@@ -12,58 +47,57 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <form className={styles.searchContainer} onSubmit={handleSubmit}>
+          <input placeholder='Search...' type='text' ref={inputRef} />
+          <button type='submit'>
+            <TablerSearch />
+          </button>
+        </form>
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h2>Documentation &rarr;</h2>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+        <div className={styles.cardsContainer} >
+          <h2>{inputRef.current?.value}</h2>
+          {items?.map(m => {
+            if (m.type !== "video") return
+            return (
+              <div className={styles.card} key={m.id}>
+                {/* <Image 
+                  alt={m.title} 
+                  src={m.thumbnails[0]?.url} 
+                  width={m.thumbnails && m.thumbnails[0].width} 
+                  height={m.thumbnails && m.thumbnails[0].height} /> */}
+                  <div className={styles.iframeContainer}>
+                    <iframe
+                    title={m.title}
+                    loading="lazy"
+                    width="730" 
+                    height="548" 
+                    src={`https://youtube.com/embed/${m.url.split('=')[1]}`} />
+                  </div>
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h2>Learn &rarr;</h2>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
-
-          <a
-            href="https://github.com/vercel/next.js/tree/canary/examples"
-            className={styles.card}
-          >
-            <h2>Examples &rarr;</h2>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
-          </a>
-
-          <a
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h2>Deploy &rarr;</h2>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
+                  <Link href={m.url}>
+                    <a target='_blank' ><h2>{m.title}</h2></a>
+                  </Link>
+              </div>
+            )
+          })}
         </div>
+
+        {items.length > 0 && 
+        <button className={styles.loadButton} onClick={handleLoadMore}>Load more...</button>}
+       
       </main>
 
       <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
+          
       </footer>
     </div>
+  )
+}
+
+
+export function TablerSearch(props) {
+  return (
+    <svg width="1.5em" height="1.5em" viewBox="0 0 24 24" {...props}><g fill="none" stroke="rgb(205, 205, 205)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"><circle cx="10" cy="10" r="7"></circle><path d="m21 21l-6-6"></path></g></svg>
   )
 }
