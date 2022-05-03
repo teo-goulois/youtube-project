@@ -7,7 +7,10 @@ export default async function handler(req, res) {
         const options = {
         pages: 1,
         }
-        const searchResults = await ytsr(q, options);
+        const filters1 = await ytsr.getFilters(q);
+        const filter1 = filters1.get('Type').get('Video');
+        const searchResults = await ytsr(filter1.url, options);
+        console.log('searchresult find');
         res.status(200).json({ data: searchResults })
     }
 

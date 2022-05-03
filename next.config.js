@@ -4,6 +4,10 @@ const nextConfig = {
   images: {
     domains: ['i.ytimg.com'],
   },
+  i18n: {
+    locales: ["en"],
+    defaultLocale: "en",
+  },
 }
 
 module.exports = nextConfig
